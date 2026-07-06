@@ -1,0 +1,595 @@
+<!DOCTYPE html> 
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>Arbuzowy Slicer 3D - Dziki Zachód PRO</title>
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Courier New', Courier, monospace;
+    background-color: #c46830;
+    user-select: none;
+}
+body > canvas {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    filter: contrast(1.1) saturate(1.2);
+}
+#ui-container {
+    position: absolute;
+    left: 20px;
+    top: 20px;
+    background: #3a2214;
+    color: #fff;
+    padding: 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border: 4px solid #1c100a;
+    box-shadow: 6px 6px 0px #000;
+    line-height: 1.6;
+    min-width: 320px;
+    z-index: 100;
+}
+#shop-container {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    background: #3a2214;
+    color: #fff;
+    padding: 8px;
+    border: 3px solid #1c100a;
+    box-shadow: 4px 4px 0px #000;
+    width: 410px;
+    z-index: 100;
+}
+.tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+.tab-btn {
+    flex: 1; background: #ffec27; color: #000; border: 2px solid #1c100a;
+    padding: 5px 2px; font-weight: bold; font-size: 11px; cursor: pointer; text-align: center;
+}
+.tab-btn.active { background: #00e436; color: #000; }
+.shop-content { max-height: 490px; overflow-y: auto; }
+.shop-item {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #23140c; padding: 6px 8px; margin: 4px 0; border: 1px solid #5c3a21; font-size: 12px;
+}
+.shop-btn {
+    background: #00e436; color: #000; border: 1px solid #000; padding: 4px 8px;
+    font-weight: bold; font-size: 11px; cursor: pointer; min-width: 110px; text-align: center;
+}
+.shop-btn:disabled { background: #5f574f; color: #ab9b8e; cursor: not-allowed; }
+.ui-line { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 2px dashed #5c3a21; padding-bottom: 5px; }
+#dymek {
+    position: absolute; top: 30px; left: 50%; transform: translateX(-50%);
+    background: #fff; color: #000; padding: 12px 35px; font-size: 18px; font-weight: bold;
+    box-shadow: 6px 6px 0px #000; border: 4px solid #d4a359; text-align: center; z-index: 100; max-width: 650px;
+}
+.progress-bar-container { width: 100%; background: #1c100a; height: 14px; border: 3px solid #fff; margin-top: 5px; }
+#progress-bar-fill { width: 100%; height: 100%; background: #ff004d; transition: width 0.05s linear; }
+#energy-bar-fill { width: 100%; height: 100%; background: #00e436; transition: width 0.2s ease; }
+#controls-hint {
+    position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
+    background: #3a2214; color: #ffec27; padding: 10px 20px; font-size: 14px;
+    border: 3px solid #1c100a; box-shadow: 3px 3px 0px #000; z-index: 100; text-align: center;
+}
+#start-menu {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: radial-gradient(ellipse at center, #853d1b 0%, #2b1105 100%);
+    display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999;
+}
+.menu-box {
+    background: #3a2214; padding: 40px 60px; border: 4px solid #000;
+    box-shadow: 0 0 0 4px #ffec27, 12px 12px 0 #000; text-align: center;
+}
+.menu-title { font-size: 42px; color: #ffec27; margin: 0 0 10px 0; font-weight: bold; text-shadow: 4px 4px 0 #000; }
+.btn-tryb {
+    background: #ff004d; color: #fff; border: 3px solid #fff; padding: 15px 30px;
+    font-size: 20px; font-weight: bold; cursor: pointer; box-shadow: 5px 5px 0 #000; margin-top: 20px;
+}
+.btn-tryb:hover { background: #00e436; color: #000; }
+
+#btn-pause {
+    position: absolute; right: 20px; bottom: 20px; background: #ffec27; color: #000;
+    border: 4px solid #1c100a; box-shadow: 4px 4px 0px #000; padding: 12px 24px;
+    font-size: 16px; font-weight: bold; cursor: pointer; z-index: 1000;
+}
+#btn-pause:hover { background: #ff004d; color: #fff; }
+
+.slider-style {
+    width: 100%;
+    margin: 8px 0;
+    cursor: pointer;
+    accent-color: #00e436;
+}
+</style>
+</head>
+<body>
+
+<div id="start-menu">
+    <div class="menu-box" id="main-menu-box">
+        <div class="menu-title">🌵 SALOON SLICER 3D 🍉</div>
+        <div id="menu-sub" style="color: #ffaa66; font-size: 16px; margin-bottom: 20px;">★ ARBUZOWY REWOLWEROWIEC ★</div>
+        <div id="menu-desc" style="color: #fff; font-size: 14px; max-width: 450px; line-height: 1.5;">
+            Arbuzy są rzucane z prawej strony! Wciśnij SPACJĘ w odpowiednim momencie. Masz 30 gwiazdek życia. Śetnij 50 arbuzów, aby przejść do kolejnego dnia! Nie pozwól licznikowi 15 sekund spaść do zera!
+        </div>
+        <button class="btn-tryb" onclick="startGry()">🤠 WEJDŹ DO SALOONU</button>
+    </div>
+</div>
+
+<div id="ui-container">
+    <div class="ui-line">📅 <span>DZIEŃ NA FARMIE:</span> <span id="val-dzien" style="color:#ffec27">1 (0/50)</span></div>
+    <div class="ui-line">🍉 <span>ROZCIĘTE OGÓŁEM:</span> <span id="val-wynik" style="color:white">0</span></div>
+    <div class="ui-line">💰 <span>ZAROBEK ($):</span> <span id="val-zarobek" style="color:#00e436">0.00 zł</span></div>
+    <div class="ui-line">🔥 <span>COMBO SZERYFA:</span> <span id="val-combo" style="color:#ff77a8">x1</span></div>
+    <div class="ui-line">⭐ <span>REPUTACJA (MAX 30):</span> <div id="val-gwiazdki" style="color:#ffec27; font-size:11px; word-wrap:break-word; max-width:180px;">⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐⭐</div></div>
+    
+    <div style="margin-top: 10px;">⏱️ Czas do ścięcia (Max 15s):</div>
+    <div class="progress-bar-container"><div id="progress-bar-fill"></div></div>
+
+    <div style="margin-top: 8px;">⚡ Energia Krajacza: <span id="val-energy-text" style="color:#00e436">500 / 500 EN</span></div>
+    <div class="progress-bar-container"><div id="energy-bar-fill"></div></div>
+</div>
+
+<div id="shop-container">
+    <div class="tabs">
+        <div id="tab-upgrades" class="tab-btn active" onclick="switchTab('upgrades')">🚀 WARSZTAT</div>
+        <div id="tab-custom" class="tab-btn" onclick="switchTab('custom')">🎨 WYGLĄD</div>
+        <div id="tab-career" class="tab-btn" style="background:#8b4513; color:#fff;" onclick="switchTab('career')">🤠 RANCHO</div>
+    </div>
+    
+    <div id="content-upgrades" class="shop-content">
+        <div class="shop-item"><div>⭐ <b>Kup 1 Gwiazdkę Reputacji</b></div><button class="shop-btn" style="background:#ffec27" onclick="kupGwiazdke()">1000 zł</button></div>
+        <div class="shop-item"><div id="txt-up-ostrze">🗡️ 1. Ostrość Ostrza (Lvl 1)</div><button class="shop-btn" id="btn-up-ostrze" onclick="upgradeOstrze()">Lvl 2: 150zł</button></div>
+        <div class="shop-item"><div id="txt-up-tasma">🚀 2. Dynamika Rzutu (Lvl 1)</div><button class="shop-btn" id="btn-up-tasma" onclick="upgradeTasma()">Lvl 2: 250zł</button></div>
+        <div class="shop-item"><div>☕ 3. Napój Rewolwerowca (500 EN)</div><button class="shop-btn" onclick="kupEnergetyk(80)">80 zł</button></div>
+        <div class="shop-item"><div>💡 4. Laserowy Celownik Linia</div><button class="shop-btn" id="btn-up-laser" onclick="kupUlepszenie('laser', 400)">400 zł</button></div>
+        <div class="shop-item"><div>🤖 5. Automatyczny Sznur (Sam tnie)</div><button class="shop-btn" id="btn-up-auto" style="background:#ffec27" onclick="kupUlepszenie('auto', 1200)">1200 zł</button></div>
+        <div class="shop-item"><div>👑 6. Uprawa Złotych Arbuzów</div><button class="shop-btn" id="btn-up-zloty" style="background:#ff77a8" onclick="kupUlepszenie('zloty', 2500)">2500 zł</button></div>
+        
+        <div style="margin-top: 12px; padding: 10px; background: #1c100a; border: 2px dashed #ffec27;">
+            <div style="font-size: 11px; display: flex; justify-content: space-between; font-weight: bold;">
+                <span>⚙️ Regulacja Szybkości Arbuzów:</span>
+                <span id="val-slider-speed" style="color: #00e436; font-size: 13px;">1.0x</span>
+            </div>
+            <input type="range" id="slider-szybkosc" class="slider-style" min="0.4" max="1.6" step="0.1" value="1.0" oninput="zmienMnoznikSzybkosci(this.value)">
+            <div style="font-size: 10px; color: #ffaa66; text-align: center; margin-top: 2px;">
+                Mnożnik zarobków: <span id="val-slider-mnoznik" style="font-weight:bold; color:#fff;">1.00x</span> (im wolniej leci, tym mniej zarabiasz!)
+            </div>
+        </div>
+    </div>
+
+    <div id="content-custom" class="shop-content" style="display: none;">
+        <div class="shop-item"><div>🪓 Styl: Drewno i Stal</div><button class="shop-btn" disabled>AKTYWNY</button></div>
+        <div class="shop-item"><div>🕶️ Styl: Neonowy Rewolwerowiec</div><button class="shop-btn" id="btn-skin-neon" onclick="kupSkin('neon', 500)">500 zł</button></div>
+        <div class="shop-item"><div>👑 Styl: Złoto Dzikiego Zachodu VIP</div><button class="shop-btn" id="btn-skin-gold" onclick="kupSkin('gold', 2000)">2000 zł</button></div>
+    </div>
+
+    <div id="content-career" class="shop-content" style="display: none;">
+        <div class="shop-item"><div>👔 Parobek z Arizony</div><button class="shop-btn" disabled>AKTYWNE</button></div>
+        <div class="shop-item"><div>👔 Zastępca Szeryfa (Zysk x1.5)</div><button class="shop-btn" id="btn-car-2" onclick="kupAwans(2, 1000)">1000 zł</button></div>
+        <div class="shop-item"><div>👔 Legendarny Szeryf (Zysk x2.5)</div><button class="shop-btn" id="btn-car-3" onclick="kupAwans(3, 4000)">4000 zł</button></div>
+    </div>
+</div>
+
+<button id="btn-pause" onclick="togglePauza()">⏸️ STOP GRY</button>
+
+<div id="dymek">🤠 Przygotuj się! Wciśnij SPACJĘ, gdy rzucony arbuz znajdzie się pod ostrzem!</div>
+<div id="controls-hint">WCIŚNIJ <b>[SPACJA]</b> ABY ŚCIĄĆ ARBUZA W LOCIE! 🍉</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script>
+let zarobek = 0, wynik = 0, combo = 1, dzien = 1, energia = 500, gwiazdki = 30, arbuzyWDniu = 0;
+let czasBezCieciaMS = 0; 
+let mnoznikSzybkosci = 1.0; 
+const maxEnergia = 500, maxGwiazdki = 30;
+let graAktywna = false, spauzowana = false;
+let arbuzy = [];
+let animacjaOstrza = false;
+
+let ulepszenia = { ostrzeLvl: 1, tasmaLvl: 1, laser: false, auto: false, zloty: false };
+let mnoznikZysku = 1.0;
+const kosztyOstrze = { 2: 150, 3: 500, 4: 1500 };
+const kosztyTasma = { 2: 250, 3: 700, 4: 2000 };
+
+const clock = new THREE.Clock();
+
+function startGry() {
+    document.getElementById("start-menu").style.display = "none";
+    graAktywna = true;
+    spauzowana = false;
+    document.getElementById("btn-pause").innerText = "⏸️ STOP GRY";
+    document.getElementById("btn-pause").style.background = "#ffec27";
+    
+    czasBezCieciaMS = 0;
+    rzućArbuza();
+    aktualizujUI();
+}
+
+function triggerGameOver(powod) {
+    graAktywna = false;
+    
+    // Zastąpienie całego menu głównego permanentną blokadą z informacją o restarcie strony
+    let menuElement = document.getElementById("start-menu");
+    menuElement.style.display = "flex";
+    menuElement.innerHTML = `
+        <div class="menu-box" style="border: 5px solid #ff004d; box-shadow: 0 0 0 4px #ff004d, 12px 12px 0 #000;">
+            <div class="menu-title" style="color: #ff004d; text-shadow: 4px 4px 0 #000;">❌ PRZEGRAŁEŚ! ❌</div>
+            <div style="color: #fff; font-size: 18px; margin-bottom: 20px; font-weight: bold; background: #23140c; padding: 10px; border: 1px solid #ff004d;">
+                ${powod}
+            </div>
+            <div style="color: #fff; font-size: 16px; max-width: 500px; line-height: 1.6;">
+                Twój ostateczny wynik: <b style="color: #ffec27; font-size: 20px;">${wynik}</b> arbuzów.<br>
+                Udało Ci się dotrzeć do dnia: <b style="color: #ffec27; font-size: 20px;">${dzien}</b>.<br><br>
+                <span style="color: #00e436; font-size: 18px; font-weight: bold; display: block; border-top: 2px dashed #5c3a21; padding-top: 15px;">
+                    🔄 MUSISZ RESTARTOWAĆ STRONĘ (wciśnij F5 lub odśwież przeglądarkę), ABY ZACZĄĆ OD NOWA!
+                </span>
+            </div>
+        </div>
+    `;
+    
+    // Czyszczenie obiektów
+    arbuzy.forEach(a => scene.remove(a));
+    arbuzy = [];
+}
+
+function togglePauza() {
+    if(!graAktywna) return;
+    spauzowana = !spauzowana;
+    let btn = document.getElementById("btn-pause");
+    if(spauzowana) {
+        btn.innerText = "▶️ WZNÓW GRĘ";
+        btn.style.background = "#00e436";
+        document.getElementById("dymek").innerHTML = "⏸️ GRA ZATRZYMANA (PAUZA)";
+    } else {
+        btn.innerText = "⏸️ STOP GRY";
+        btn.style.background = "#ffec27";
+        document.getElementById("dymek").innerHTML = "🤠 Gra wznowiona! Tnij arbuzy!";
+        
+        // POPRAWKA BŁĘDU: Jeśli timer rzutu wykonał się w trakcie pauzy, arbuzy znikną.
+        // Jeśli po odbezpieczeniu pauzy na ekranie nie ma arbuzów, natychmiast rzucamy nowego!
+        if (arbuzy.length === 0) {
+            rzućArbuza();
+        }
+    }
+}
+
+function switchTab(tab) {
+    document.getElementById('content-upgrades').style.display = (tab === 'upgrades') ? 'block' : 'none';
+    document.getElementById('content-custom').style.display = (tab === 'custom') ? 'block' : 'none';
+    document.getElementById('content-career').style.display = (tab === 'career') ? 'block' : 'none';
+    document.getElementById('tab-upgrades').classList.toggle('active', tab === 'upgrades');
+    document.getElementById('tab-custom').classList.toggle('active', tab === 'custom');
+    document.getElementById('tab-career').classList.toggle('active', tab === 'career');
+}
+
+function zmienMnoznikSzybkosci(val) {
+    mnoznikSzybkosci = parseFloat(val);
+    document.getElementById("val-slider-speed").innerText = mnoznikSzybkosci.toFixed(1) + "x";
+    document.getElementById("val-slider-mnoznik").innerText = mnoznikSzybkosci.toFixed(2) + "x";
+}
+
+function playSound(freq, duration, type='sine') {
+    try {
+        let ctx = new (window.AudioContext || window.webkitAudioContext)();
+        let osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(0.05, ctx.currentTime);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + duration);
+    } catch(e){}
+}
+
+// INICJALIZACJA SCENY WESTERN 3D
+const scene = new THREE.Scene();
+scene.background = new THREE.Color("#e58e47");
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
+camera.position.set(0, 2.5, 3.8); camera.lookAt(0, 1.2, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: false });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const light = new THREE.DirectionalLight(0xffffff, 1.2); light.position.set(5, 12, 6); scene.add(light);
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+
+// SCENERIA
+const piasek = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshStandardMaterial({ color: 0xd4a359, roughness: 0.9 }));
+piasek.rotation.x = -Math.PI / 2; scene.add(piasek);
+
+const slonce = new THREE.Mesh(new THREE.CircleGeometry(2.5, 32), new THREE.MeshBasicMaterial({ color: 0xffcc33, side: THREE.DoubleSide }));
+slonce.position.set(0, 4.5, -7); scene.add(slonce);
+
+function stworzKaktus(x, z) {
+    const kaktusGroup = new THREE.Group();
+    const matKak = new THREE.MeshStandardMaterial({ color: 0x386b20, roughness: 0.8 });
+    const pniu = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 1.8, 8), matKak); pniu.position.y = 0.9; kaktusGroup.add(pniu);
+    const ramię1h = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.4, 8), matKak); ramię1h.rotation.z = Math.PI/2; ramię1h.position.set(0.2, 1.1, 0); kaktusGroup.add(ramię1h);
+    const ramię1v = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.5, 8), matKak); ramię1v.position.set(0.36, 1.3, 0); kaktusGroup.add(ramię1v);
+    kaktusGroup.position.set(x, 0, z); scene.add(kaktusGroup);
+}
+stworzKaktus(-3.5, -3); stworzKaktus(3.8, -4); stworzKaktus(-4.5, -1);
+
+const matPien = new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.9 });
+const pien = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.5, 1.0, 12), matPien);
+pien.position.set(0, 0.5, 0); scene.add(pien);
+
+const matBelki = new THREE.MeshStandardMaterial({ color: 0x3d2314, roughness: 1.0 });
+const belkaL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.6, 0.12), matBelki); belkaL.position.set(-0.65, 1.3, 0); scene.add(belkaL);
+const belkaP = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.6, 0.12), matBelki); belkaP.position.set(0.65, 1.3, 0); scene.add(belkaP);
+const belkaG = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.15, 0.12), matBelki); belkaG.position.set(0, 2.5, 0); scene.add(belkaG);
+
+const matOstrze = new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.2, metalness: 0.7 });
+const ostrze = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.35, 0.03), matOstrze);
+let ostrzeY = 2.1; ostrze.position.set(0, ostrzeY, 0); scene.add(ostrze);
+
+const matLaser = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+const laser = new THREE.Mesh(new THREE.BoxGeometry(0.02, 1.3, 0.02), matLaser);
+laser.position.set(0, 1.6, 0); laser.visible = false; scene.add(laser);
+
+// KOWBOJ
+const cowboyGroup = new THREE.Group();
+const mKoszula = new THREE.MeshStandardMaterial({ color: 0x8b4513 });
+const mSkora = new THREE.MeshStandardMaterial({ color: 0xffe0bd });
+const mKapelusz = new THREE.MeshStandardMaterial({ color: 0x4a2f13 });
+const mSpodnie = new THREE.MeshStandardMaterial({ color: 0x2b3e50 });
+
+const nogi = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.5, 0.15), mSpodnie); nogi.position.y = 0.25; cowboyGroup.add(nogi);
+const tulow = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.55, 0.22), mKoszula); tulow.position.y = 0.75; cowboyGroup.add(tulow);
+const glowa = new THREE.Mesh(new THREE.SphereGeometry(0.14, 16, 16), mSkora); glowa.position.y = 1.12; cowboyGroup.add(glowa);
+const rondo = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.03, 16), mKapelusz); rondo.position.y = 1.24; cowboyGroup.add(rondo);
+const czapa = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 0.14, 16), mKapelusz); czapa.position.y = 1.32; cowboyGroup.add(czapa);
+
+cowboyGroup.position.set(-1.0, 0, 0.3); cowboyGroup.rotation.y = 0.5; scene.add(cowboyGroup);
+
+function generujTekstureArbuza(isZloty) {
+    let c = document.createElement("canvas"); c.width = 32; c.height = 32;
+    let ctx = c.getContext("2d");
+    ctx.fillStyle = isZloty ? "#ffd700" : "#2ca83b"; ctx.fillRect(0,0,32,32);
+    ctx.fillStyle = isZloty ? "#b8860b" : "#1b6622"; 
+    for(let i=0; i<32; i+=8) ctx.fillRect(i, 0, 4, 32);
+    ctx.fillStyle = "#000"; ctx.fillRect(8, 10, 4, 4); ctx.fillRect(20, 10, 4, 4);
+    ctx.fillRect(8, 20, 16, 2); ctx.fillRect(6, 18, 2, 2); ctx.fillRect(24, 18, 2, 2);
+    let tex = new THREE.CanvasTexture(c); tex.magFilter = THREE.NearestFilter;
+    return new THREE.MeshStandardMaterial({ map: tex });
+}
+const matArbuzWnetrze = new THREE.MeshStandardMaterial({ color: 0xff004d });
+
+function rzućArbuza() {
+    if(!graAktywna || spauzowana) return;
+    let isZloty = ulepszenia.zloty && Math.random() < 0.25;
+    let g = new THREE.Group();
+    let geom = new THREE.BoxGeometry(0.35, 0.6, 0.6);
+    let matZew = generujTekstureArbuza(isZloty);
+    
+    let pL = new THREE.Mesh(geom, [matArbuzWnetrze, matZew, matZew, matZew, matZew, matZew]); pL.position.set(-0.175, 0, 0); g.add(pL);
+    let pP = new THREE.Mesh(geom, [matZew, matArbuzWnetrze, matZew, matZew, matZew, matZew]); pP.position.set(0.175, 0, 0); g.add(pP);
+    
+    g.userData = {
+        t: 0, zloty: isZloty, pociety: false,
+        rotSpX: Math.random()*0.04+0.02, rotSpY: Math.random()*0.04+0.02, grav: 0
+    };
+    g.position.set(3.5, 0.8, 0);
+    scene.add(g); arbuzy.push(g);
+}
+
+function tnijArbuza() {
+    if(animacjaOstrza || spauzowana || !graAktywna) return;
+    
+    if(energia < 15) {
+        document.getElementById("dymek").innerHTML = "<span style='color:#ff3333; font-weight:bold;'>⚠️ BRAK ENERGII! Kup Napój Rewolwerowca w sklepie! 🤠</span>";
+        playSound(120, 0.3, 'sawtooth');
+        return;
+    }
+    
+    animacjaOstrza = true;
+    energia = Math.max(0, energia - 15);
+    document.getElementById("energy-bar-fill").style.width = (energia / maxEnergia * 100) + "%";
+    document.getElementById("val-energy-text").innerText = energia + " / 500 EN";
+    playSound(380, 0.08, 'sawtooth');
+
+    cowboyGroup.rotation.z = -0.15;
+    setTimeout(() => { cowboyGroup.rotation.z = 0; }, 180);
+
+    let trafiony = false;
+    arbuzy.forEach(a => {
+        if(!a.userData.pociety && Math.abs(a.position.x) < 0.45) {
+            a.userData.pociety = true;
+            trafiony = true;
+            wynik++; combo++; arbuzyWDniu++;
+            
+            czasBezCieciaMS = 0;
+            
+            let wartosc = (a.userData.zloty ? 45 : 15) * ulepszenia.ostrzeLvl * combo * mnoznikZysku * mnoznikSzybkosci;
+            zarobek += wartosc;
+            
+            playSound(750, 0.12, 'sine');
+            document.getElementById("dymek").innerHTML = `🎯 TRAFIONY W LOCIE! +${wartosc.toFixed(2)} zł (Combo x${combo})`;
+
+            if(arbuzyWDniu >= 50) {
+                dzien++;
+                arbuzyWDniu = 0;
+                playSound(1200, 0.4);
+                document.getElementById("dymek").innerHTML = `🎉 KOLEJNY DZIEŃ! Rozpoczynasz Dzień ${dzien}! Prędkość rośnie!`;
+            }
+        }
+    });
+
+    if(!trafiony) {
+        combo = 1;
+        document.getElementById("dymek").innerHTML = "🤠 Pudło! Ostrze uderzyło w pusty pień!";
+        playSound(150, 0.2, 'square');
+    }
+    
+    aktualizujUI();
+    setTimeout(() => { animacjaOstrza = false; ostrze.position.y = 2.1; }, 180);
+}
+
+window.onkeydown = e => {
+    if(e.code === "Space") { tnijArbuza(); e.preventDefault(); }
+};
+
+function aktualizujUI() {
+    document.getElementById("val-wynik").innerText = wynik;
+    document.getElementById("val-zarobek").innerText = zarobek.toFixed(2) + " zł";
+    document.getElementById("val-combo").innerText = "x" + combo;
+    document.getElementById("val-dzien").innerHTML = `${dzien} <span style='font-size:11px; color:#ffcc33;'>(${arbuzyWDniu}/50)</span>`;
+    
+    let txtG = "";
+    for(let i=0; i<gwiazdki; i++) txtG += "⭐";
+    document.getElementById("val-gwiazdki").innerText = txtG || "BRAK REPUTACJI";
+}
+
+// GŁÓWNA PĘTLA
+function anim() {
+    requestAnimationFrame(anim);
+    const dt = clock.getDelta();
+
+    if(graAktywna && !spauzowana) {
+        if(animacjaOstrza) { ostrze.position.y = Math.max(1.1, ostrze.position.y - 0.25); }
+        
+        czasBezCieciaMS += dt * 1000;
+        if(czasBezCieciaMS >= 15000) {
+            triggerGameOver("Minęło 15 sekund bez ścięcia arbuza! Widzowie poszli do domu!");
+            return;
+        }
+        let pasekPct = Math.max(0, ((15000 - czasBezCieciaMS) / 15000) * 100);
+        document.getElementById("progress-bar-fill").style.width = pasekPct + "%";
+
+        let spd = (0.012 + (dzien * 0.002)) * ulepszenia.tasmaLvl * mnoznikSzybkosci; 
+        for(let i = arbuzy.length - 1; i >= 0; i--) {
+            let a = arbuzy[i];
+            let ud = a.userData;
+            
+            if(!ud.pociety) {
+                ud.t += spd;
+                a.position.x = 3.5 - 7.0 * ud.t;
+                a.position.y = 0.8 + 2.4 * ud.t * (1.0 - ud.t);
+                a.rotation.x += ud.rotSpX; a.rotation.y += ud.rotSpY;
+                
+                if(ulepszenia.auto && Math.abs(a.position.x) < 0.1) { tnijArbuza(); }
+
+                if(ud.t >= 1.0) { 
+                    combo = 1;
+                    gwiazdki--;
+                    document.getElementById("dymek").innerHTML = "❌ Arbuz rozbił się o ziemię! Tracisz 1 gwiazdkę reputacji!";
+                    
+                    if(gwiazdki <= 0) {
+                        triggerGameOver("Straciłeś wszystkie gwiazdki reputacji! Szeryf wyrzucił Cię z miasteczka.");
+                        return;
+                    }
+                    
+                    aktualizujUI();
+                    scene.remove(a); arbuzy.splice(i, 1);
+                    if(graAktywna && !spauzowana) setTimeout(rzućArbuza, 400);
+                }
+            } else {
+                ud.grav += 0.015;
+                a.position.y -= ud.grav;
+                a.position.x -= 0.02;
+                a.children[0].position.z += 0.04; a.children[0].position.y -= 0.01; a.children[0].rotation.z += 0.05;
+                a.children[1].position.z -= 0.04; a.children[1].position.y -= 0.01; a.children[1].rotation.z -= 0.05;
+                
+                if(a.position.y < -1.0) {
+                    scene.remove(a); arbuzy.splice(i, 1);
+                    if(graAktywna && !spauzowana) setTimeout(rzućArbuza, 400);
+                }
+            }
+        }
+    }
+    renderer.render(scene, camera);
+}
+anim();
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// FUNKCJE SKLEPU
+function kupGwiazdke() {
+    if(zarobek >= 1000) {
+        if(gwiazdki < maxGwiazdki) {
+            zarobek -= 1000;
+            gwiazdki++;
+            aktualizujUI();
+            playSound(800, 0.2);
+            document.getElementById("dymek").innerHTML = "⭐ Dokupiono 1 gwiazdkę reputacji szeryfa!";
+        } else {
+            document.getElementById("dymek").innerHTML = "❌ Masz już maksymalną liczbę gwiazdek (30)!";
+        }
+    } else {
+        document.getElementById("dymek").innerHTML = "❌ Brakuje Ci gotówki! Potrzebujesz 1000 zł.";
+    }
+}
+
+function upgradeOstrze() {
+    let next = ulepszenia.ostrzeLvl + 1;
+    if(zarobek >= kosztyOstrze[next]) {
+        zarobek -= kosztyOstrze[next]; ulepszenia.ostrzeLvl = next;
+        document.getElementById("txt-up-ostrze").innerText = `🗡️ 1. Ostrość Ostrza (Lvl ${next})`;
+        let btn = document.getElementById("btn-up-ostrze");
+        if(next === 4) { btn.innerText = "MAX"; btn.disabled = true; }
+        else { btn.innerText = `Lvl ${next+1}: ${kosztyOstrze[next+1]}zł`; }
+        aktualizujUI(); playSound(600, 0.2);
+    }
+}
+
+function upgradeTasma() {
+    let next = ulepszenia.tasmaLvl + 1;
+    if(zarobek >= kosztyTasma[next]) {
+        zarobek -= kosztyTasma[next]; ulepszenia.tasmaLvl = next;
+        document.getElementById("txt-up-tasma").innerText = `🚀 2. Dynamika Rzutu (Lvl ${next})`;
+        let btn = document.getElementById("btn-up-tasma");
+        if(next === 4) { btn.innerText = "MAX"; btn.disabled = true; }
+        else { btn.innerText = `Lvl ${next+1}: ${kosztyTasma[next+1]}zł`; }
+        aktualizujUI(); playSound(600, 0.2);
+    }
+}
+
+function kupEnergetyk(koszt) {
+    if(zarobek >= koszt) {
+        zarobek -= koszt; energia = 500;
+        document.getElementById("energy-bar-fill").style.width = "100%";
+        document.getElementById("val-energy-text").innerText = "500 / 500 EN";
+        document.getElementById("dymek").innerHTML = "🤠 Energia odnowiona do pełna! Możesz rąbać dalej!";
+        aktualizujUI(); playSound(800, 0.15);
+    }
+}
+
+function kupUlepszenie(typ, koszt) {
+    if(zarobek >= koszt) {
+        zarobek -= koszt; ulepszenia[typ] = true;
+        if(typ === 'laser') laser.visible = true;
+        document.getElementById("btn-up-" + typ).innerText = "KUPIONE";
+        document.getElementById("btn-up-" + typ).disabled = true;
+        aktualizujUI(); playSound(700, 0.2);
+    }
+}
+
+function kupSkin(skin, koszt) {
+    if(zarobek >= koszt) {
+        zarobek -= koszt;
+        if(skin === 'neon') {
+            matOstrze.color.setHex(0xff00ff); matBelki.color.setHex(0x00ffff);
+        } else if(skin === 'gold') {
+            matOstrze.color.setHex(0xffd700); matBelki.color.setHex(0xb8860b);
+        }
+        document.getElementById("btn-skin-" + skin).innerText = "AKTYWNY";
+        aktualizujUI(); playSound(900, 0.25);
+    }
+}
+
+function kupAwans(lvl, koszt) {
+    if(zarobek >= koszt) {
+        zarobek -= koszt;
+        mnoznikZysku = (lvl === 2) ? 1.5 : 2.5;
+        document.getElementById("btn-car-" + lvl).innerText = "AWANSOWANO";
+        document.getElementById("btn-car-" + lvl).disabled = true;
+        aktualizujUI(); playSound(1000, 0.3);
+    }
+}
+</script>
+</body>
+</html>
